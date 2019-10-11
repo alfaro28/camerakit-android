@@ -270,13 +270,7 @@ public class CameraKitView extends GestureLayout {
 
         a.recycle();
 
-        switch (getCameraApiVersion()) {
-            case CameraKit.CAMERA_API_CAMERA1: cameraApiVersion = CameraApiVersion.CAMERA1; break;
-            case CameraKit.CAMERA_API_CAMERA2: cameraApiVersion = CameraApiVersion.CAMERA2; break;
-            case CameraKit.CAMERA_API_DEFAULT:
-            default:
-                cameraApiVersion = CameraApiVersion.AUTO; break;
-        }
+        updateCameraApiVersion();
         mCameraPreview = new CameraPreview(getContext(), cameraApiVersion);
         addView(mCameraPreview);
 
@@ -440,7 +434,7 @@ public class CameraKitView extends GestureLayout {
             mPermissionsListener.onPermissionsSuccess();
         }
 
-        setCameraApiVersion(mCameraApiVersion);
+        updateCameraApiVersion();
         setFlash(mFlash);
         setImageMegaPixels(mImageMegaPixels);
 
@@ -662,6 +656,7 @@ public class CameraKitView extends GestureLayout {
      */
     public void setCameraApiVersion(@CameraKit.CameraApiVersion int cameraApiVersion) {
         mCameraApiVersion = cameraApiVersion;
+        updateCameraApiVersion();
     }
 
     /**
@@ -1022,6 +1017,27 @@ public class CameraKitView extends GestureLayout {
         }
 
         return mCameraPreview.getPhotoSize();
+    }
+
+    /**
+     * Update camera API version
+     */
+    private void updateCameraApiVersion() {
+        switch (getCameraApiVersion()) {
+            case CameraKit.CAMERA_API_CAMERA1:
+                CameraKitView.cameraApiVersion = CameraApiVersion.CAMERA1;
+                break;
+            case CameraKit.CAMERA_API_CAMERA2:
+                CameraKitView.cameraApiVersion = CameraApiVersion.CAMERA2;
+                break;
+            case CameraKit.CAMERA_API_DEFAULT:
+            default:
+                CameraKitView.cameraApiVersion = CameraApiVersion.AUTO;
+                break;
+        }
+
+        if (mCameraPreview != null)
+            mCameraPreview.setCameraApiVersion(CameraKitView.cameraApiVersion);
     }
 
     /**

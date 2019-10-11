@@ -182,7 +182,7 @@ class CameraPreview : FrameLayout, CameraEvents {
         return attributes?.flashes
     }
 
-    private fun setCameraApiVersion(cameraApiVersion: CameraApiVersion) {
+    fun setCameraApiVersion(cameraApiVersion: CameraApiVersion) {
         this.cameraApiVersion = cameraApiVersion
         cameraApi = createCameraApi()
     }
