@@ -1,5 +1,6 @@
 package com.camerakit
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.util.AttributeSet
@@ -15,6 +16,7 @@ import com.camerakit.api.CameraEvents
 import com.camerakit.api.ManagedCameraApi
 import com.camerakit.api.camera1.Camera1
 import com.camerakit.api.camera2.Camera2
+import com.camerakit.type.CameraApiVersion
 import com.camerakit.type.CameraFacing
 import com.camerakit.type.CameraFlash
 import com.camerakit.type.CameraSize
@@ -71,6 +73,7 @@ class CameraPreview : FrameLayout, CameraEvents {
     var imageMegaPixels: Float = 2f
 
     private var cameraFacing: CameraFacing = CameraFacing.BACK
+    private var cameraApiVersion: CameraApiVersion = CameraApiVersion.AUTO
     private var surfaceTexture: CameraSurfaceTexture? = null
     private var attributes: CameraAttributes? = null
 
@@ -80,23 +83,23 @@ class CameraPreview : FrameLayout, CameraEvents {
     private var cameraOpenContinuation: Continuation<Unit>? = null
     private var previewStartContinuation: Continuation<Unit>? = null
 
-    @SuppressWarnings("NewApi")
-    private val cameraApi: CameraApi = ManagedCameraApi(
-            when (Build.VERSION.SDK_INT < 21 || FORCE_DEPRECATED_API) {
-                true -> Camera1(this)
-                false -> Camera2(this, context)
-            })
+    private var cameraApi: CameraApi
 
-    constructor(context: Context) :
-            super(context)
+    constructor(context: Context, cameraApiVersion: CameraApiVersion) :
+            super(context) {
+        setCameraApiVersion(cameraApiVersion)
+    }
 
-    constructor(context: Context, attributeSet: AttributeSet) :
-            super(context, attributeSet)
+    constructor(context: Context, attributeSet: AttributeSet, cameraApiVersion: CameraApiVersion) :
+            super(context, attributeSet) {
+        setCameraApiVersion(cameraApiVersion)
+    }
 
     init {
         val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         displayOrientation = windowManager.defaultDisplay.rotation * 90
 
+        cameraApi = createCameraApi()
         cameraSurfaceView.cameraSurfaceTextureListener = object : CameraSurfaceTextureListener {
             override fun onSurfaceReady(cameraSurfaceTexture: CameraSurfaceTexture) {
                 surfaceTexture = cameraSurfaceTexture
@@ -177,6 +180,20 @@ class CameraPreview : FrameLayout, CameraEvents {
 
     fun getSupportedFlashTypes(): Array<CameraFlash>? {
         return attributes?.flashes
+    }
+
+    private fun setCameraApiVersion(cameraApiVersion: CameraApiVersion) {
+        this.cameraApiVersion = cameraApiVersion
+        cameraApi = createCameraApi()
+    }
+
+    @SuppressLint("NewApi")
+    private fun createCameraApi(): ManagedCameraApi {
+        return ManagedCameraApi(
+                when (useDeprecatedApi()) {
+                    true -> Camera1(this)
+                    false -> Camera2(this, context)
+                })
     }
 
     interface PhotoCallback {
@@ -265,7 +282,7 @@ class CameraPreview : FrameLayout, CameraEvents {
                 CameraFacing.FRONT -> (attributes.sensorOrientation + displayOrientation + 360) % 360
             }
 
-            if (Build.VERSION.SDK_INT >= 21 && !FORCE_DEPRECATED_API) {
+            if (!useDeprecatedApi()) {
                 surfaceTexture.setRotation(displayOrientation)
             }
 
@@ -294,25 +311,33 @@ class CameraPreview : FrameLayout, CameraEvents {
         }
     }
 
-    private suspend fun stopPreview(): Unit = suspendCoroutine {
-        cameraState = CameraState.PREVIEW_STOPPING
-        cameraApi.stopPreview()
-        it.resume(Unit)
-    }
+        private fun useDeprecatedApi(): Boolean {
+            return when (cameraApiVersion) {
+                CameraApiVersion.CAMERA1 -> true
+                CameraApiVersion.CAMERA2 -> false
+                else -> Build.VERSION.SDK_INT < 21 && FORCE_DEPRECATED_API
+            }
+        }
 
-    private suspend fun closeCamera(): Unit = suspendCoroutine {
-        cameraState = CameraState.CAMERA_CLOSING
-        cameraApi.release()
-        it.resume(Unit)
-    }
+        private suspend fun stopPreview(): Unit = suspendCoroutine {
+            cameraState = CameraState.PREVIEW_STOPPING
+            cameraApi.stopPreview()
+            it.resume(Unit)
+        }
 
-    // Listener:
+        private suspend fun closeCamera(): Unit = suspendCoroutine {
+            cameraState = CameraState.CAMERA_CLOSING
+            cameraApi.release()
+            it.resume(Unit)
+        }
 
-    interface Listener {
-        fun onCameraOpened()
-        fun onCameraClosed()
-        fun onPreviewStarted()
-        fun onPreviewStopped()
+        // Listener:
+
+        interface Listener {
+            fun onCameraOpened()
+            fun onCameraClosed()
+            fun onPreviewStarted()
+            fun onPreviewStopped()
     }
 
 }

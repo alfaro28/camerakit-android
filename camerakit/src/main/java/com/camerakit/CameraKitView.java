@@ -15,6 +15,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.ViewGroup;
 
+import com.camerakit.type.CameraApiVersion;
 import com.camerakit.type.CameraFacing;
 import com.camerakit.type.CameraFlash;
 import com.camerakit.type.CameraSize;
@@ -206,6 +207,7 @@ public class CameraKitView extends GestureLayout {
 
     }
 
+    private int mCameraApiVersion;
     private boolean mAdjustViewBounds;
     private float mAspectRatio;
     private int mFacing;
@@ -223,6 +225,7 @@ public class CameraKitView extends GestureLayout {
     private ErrorListener mErrorListener;
     private PermissionsListener mPermissionsListener;
 
+    private static CameraApiVersion cameraApiVersion;
     private static CameraFacing cameraFacing;
     private static CameraFlash cameraFlash;
 
@@ -247,6 +250,7 @@ public class CameraKitView extends GestureLayout {
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.CameraKitView);
         mAdjustViewBounds = a.getBoolean(R.styleable.CameraKitView_android_adjustViewBounds, false);
         mAspectRatio = a.getFloat(R.styleable.CameraKitView_camera_aspectRatio, -1f);
+        mCameraApiVersion = a.getInteger(R.styleable.CameraKitView_camera_apiVersion, CameraKit.CAMERA_API_DEFAULT);
 
         mFacing = a.getInteger(R.styleable.CameraKitView_camera_facing, CameraKit.FACING_BACK);
         if (cameraFacing == CameraFacing.FRONT) {
@@ -266,7 +270,14 @@ public class CameraKitView extends GestureLayout {
 
         a.recycle();
 
-        mCameraPreview = new CameraPreview(getContext());
+        switch (getCameraApiVersion()) {
+            case CameraKit.CAMERA_API_CAMERA1: cameraApiVersion = CameraApiVersion.CAMERA1; break;
+            case CameraKit.CAMERA_API_CAMERA2: cameraApiVersion = CameraApiVersion.CAMERA2; break;
+            case CameraKit.CAMERA_API_DEFAULT:
+            default:
+                cameraApiVersion = CameraApiVersion.AUTO; break;
+        }
+        mCameraPreview = new CameraPreview(getContext(), cameraApiVersion);
         addView(mCameraPreview);
 
         mCameraPreview.setListener(new CameraPreview.Listener() {
@@ -429,6 +440,7 @@ public class CameraKitView extends GestureLayout {
             mPermissionsListener.onPermissionsSuccess();
         }
 
+        setCameraApiVersion(mCameraApiVersion);
         setFlash(mFlash);
         setImageMegaPixels(mImageMegaPixels);
 
@@ -640,6 +652,25 @@ public class CameraKitView extends GestureLayout {
      */
     public float getAspectRatio() {
         return mAspectRatio;
+    }
+
+    /**
+     * @param cameraApiVersion one of {@link CameraKit.CameraApiVersion}'s constants.
+     * @see CameraKit#CAMERA_API_DEFAULT
+     * @see CameraKit#CAMERA_API_CAMERA1
+     * @see CameraKit#CAMERA_API_CAMERA2
+     */
+    public void setCameraApiVersion(@CameraKit.CameraApiVersion int cameraApiVersion) {
+        mCameraApiVersion = cameraApiVersion;
+    }
+
+    /**
+     * @return one of {@link CameraKit.CameraApiVersion}'s constants.
+     * @see #setCameraApiVersion(int)
+     */
+    @CameraKit.CameraApiVersion
+    public int getCameraApiVersion() {
+        return mCameraApiVersion;
     }
 
     /**

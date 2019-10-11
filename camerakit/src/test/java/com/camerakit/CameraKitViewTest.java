@@ -118,6 +118,13 @@ public class CameraKitViewTest {
     }
 
     @Test
+    public void setCameraApiVersion() {
+        cameraKitView.setCameraApiVersion(CameraKit.CAMERA_API_CAMERA1);
+        assertEquals(cameraKitView.getCameraApiVersion(), CameraKit.CAMERA_API_CAMERA1);
+    }
+
+
+    @Test
     public void setFacingTest() {
         cameraKitView.setFacing(CameraKit.FACING_BACK);
         assertEquals(CameraKit.FACING_BACK, cameraKitView.getFacing());

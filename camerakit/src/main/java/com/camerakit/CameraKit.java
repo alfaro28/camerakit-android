@@ -36,6 +36,19 @@ public class CameraKit {
      */
     public static final int FACING_FRONT = 1;
 
+
+    /**
+     * Describes which camera API version should be used
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({CAMERA_API_DEFAULT, CAMERA_API_CAMERA1, CAMERA_API_CAMERA2})
+    @interface CameraApiVersion {}
+
+    public static final int CAMERA_API_DEFAULT = 0;
+    public static final int CAMERA_API_CAMERA1 = 1;
+    public static final int CAMERA_API_CAMERA2 = 2;
+
     /**
      * Describes the orientation of the camera lens relative to the screen.
      */
