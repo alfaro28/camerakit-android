@@ -315,7 +315,7 @@ class CameraPreview : FrameLayout, CameraEvents {
             return when (cameraApiVersion) {
                 CameraApiVersion.CAMERA1 -> true
                 CameraApiVersion.CAMERA2 -> false
-                else -> Build.VERSION.SDK_INT < 21 && FORCE_DEPRECATED_API
+                else -> Build.VERSION.SDK_INT < 21 || FORCE_DEPRECATED_API
             }
         }
 
